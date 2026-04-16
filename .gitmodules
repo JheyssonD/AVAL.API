@@ -1,0 +1,3 @@
+[submodule "src/AVAL.Core.Business"]
+	path = src/AVAL.Core.Business
+	url = https://github.com/JheyssonD/AVAL.Core.Business
