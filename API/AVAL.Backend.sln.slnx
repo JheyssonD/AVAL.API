@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="../Contracts/Contracts.csproj" Id="b03a0596-7160-4cbd-a274-2c13a2d43adf" />
+  <Project Path="../src/AVAL.Core.Business/AVAL.Core.Business.csproj" />
+  <Project Path="API.csproj" />
+</Solution>
