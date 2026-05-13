@@ -1,27 +1,21 @@
 using FastEndpoints;
-using RentGuard.Core.Business.Modules.Payments.CreatePayment;
-using RentGuard.Core.Business.Modules.TrustScore.GetTrustScore;
-using RentGuard.Core.Business.Modules.AIValidation.ProcessValidation;
-using RentGuard.Core.Business.Modules.Review.SubmitReview;
-
-
+using RentGuard.Presentation.API.Infrastructure.Persistence;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        builder.Services.AddInfrastructure(builder.Configuration);
+        
+        builder.Services.AddControllers(); // Asegurar soporte de controladores
         builder.Services.AddFastEndpoints();
         builder.Services.AddOpenApi();
 
-        // Inyección de Handlers del Core
-        builder.Services.AddScoped<CreatePaymentHandler>();
-        builder.Services.AddScoped<GetTrustScoreHandler>();
-        builder.Services.AddScoped<ProcessValidationHandler>();
-        builder.Services.AddScoped<SubmitReviewHandler>();
-
         var app = builder.Build();
+
+        await DbInitializer.Initialize(app.Configuration);
 
         if (app.Environment.IsDevelopment())
         {
@@ -30,8 +24,13 @@ public class Program
 
         app.UseHttpsRedirection();
         app.UseAuthorization();
+        
+        // Endpoints de prueba directos
+        app.MapGet("/health", () => "API is alive");
+        
+        app.MapControllers();
         app.UseFastEndpoints();
 
-        app.Run();
+        await app.RunAsync();
     }
 }
