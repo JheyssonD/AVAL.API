@@ -1,51 +1,51 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using RentGuard.Core.Business;
 using RentGuard.Core.Business.Modules.Payments.CreatePayment;
 using RentGuard.Core.Business.Modules.Payments.ApprovePayment;
-using RentGuard.Core.Business.Modules.Payments.GetPayments;
+using RentGuard.Core.Business.Modules.Payments.Domain.Repositories;
 
 namespace RentGuard.Presentation.API.Controllers;
 
 [ApiController]
-[Route("api/v1/payments")]
+[Route("api/v1/[controller]")]
 public class PaymentsController : ControllerBase
 {
-    private readonly CreatePaymentHandler _createHandler;
-    private readonly ApprovePaymentHandler _approveHandler;
-    private readonly GetPaymentsHandler _getHandler;
+    private readonly CreatePaymentHandler _createPaymentHandler;
+    private readonly ApprovePaymentHandler _approvePaymentHandler;
+    private readonly IPaymentRepository _paymentRepository;
+    private readonly IStringLocalizer<SharedResources> _localizer;
 
     public PaymentsController(
-        CreatePaymentHandler createHandler, 
-        ApprovePaymentHandler approveHandler,
-        GetPaymentsHandler getHandler)
+        CreatePaymentHandler createPaymentHandler,
+        ApprovePaymentHandler approvePaymentHandler,
+        IPaymentRepository paymentRepository,
+        IStringLocalizer<SharedResources> localizer)
     {
-        _createHandler = createHandler;
-        _approveHandler = approveHandler;
-        _getHandler = getHandler;
+        _createPaymentHandler = createPaymentHandler;
+        _approvePaymentHandler = approvePaymentHandler;
+        _paymentRepository = paymentRepository;
+        _localizer = localizer;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetPayments()
+    public async Task<IActionResult> GetAll()
     {
-        var payments = await _getHandler.Handle(CancellationToken.None);
+        var payments = await _paymentRepository.GetAllAsync();
         return Ok(payments);
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentRequest request)
+    public async Task<IActionResult> Create([FromBody] CreatePaymentCommand command)
     {
-        var command = new CreatePaymentCommand(request.LeaseId, request.Amount, DateTime.UtcNow, request.Reference);
-        await _createHandler.Handle(command, CancellationToken.None);
-        return Ok(new { Message = "Payment registered successfully" });
+        await _createPaymentHandler.Handle(command, HttpContext.RequestAborted);
+        return Ok(new { Message = _localizer["PaymentCreated"].Value });
     }
 
-    [HttpPost("approve")]
-    public async Task<IActionResult> ApprovePayment([FromBody] ApprovePaymentRequest request)
+    [HttpPost("{id}/approve")]
+    public async Task<IActionResult> Approve(Guid id)
     {
-        var command = new ApprovePaymentCommand(request.PaymentId);
-        await _approveHandler.Handle(command, CancellationToken.None);
-        return Ok(new { Message = "Payment approved and TrustScore updated" });
+        await _approvePaymentHandler.Handle(new ApprovePaymentCommand(id), HttpContext.RequestAborted);
+        return Ok(new { Message = _localizer["PaymentApproved"].Value });
     }
 }
-
-public record CreatePaymentRequest(Guid LeaseId, decimal Amount, string Reference);
-public record ApprovePaymentRequest(Guid PaymentId);

@@ -1,51 +1,50 @@
 using Microsoft.AspNetCore.Mvc;
-using RentGuard.Presentation.Contracts.Modules.Leases;
-using RentGuard.Core.Business.Modules.Leases.CreateProperty;
+using Microsoft.Extensions.Localization;
+using RentGuard.Core.Business;
 using RentGuard.Core.Business.Modules.Leases.CreateLease;
 using RentGuard.Core.Business.Modules.Leases.Domain.Repositories;
 
 namespace RentGuard.Presentation.API.Controllers;
 
 [ApiController]
-[Route("api/v1/leases")]
+[Route("api/v1/[controller]")]
 public class LeasesController : ControllerBase
 {
-    private readonly CreatePropertyHandler _propertyHandler;
-    private readonly CreateLeaseHandler _leaseHandler;
-    private readonly IPropertyRepository _propertyRepository;
+    private readonly CreateLeaseHandler _createLeaseHandler;
     private readonly ILeaseRepository _leaseRepository;
+    private readonly IPropertyRepository _propertyRepository;
+    private readonly IStringLocalizer<SharedResources> _localizer;
 
     public LeasesController(
-        CreatePropertyHandler propertyHandler, 
-        CreateLeaseHandler leaseHandler, 
+        CreateLeaseHandler createLeaseHandler, 
+        ILeaseRepository leaseRepository,
         IPropertyRepository propertyRepository,
-        ILeaseRepository leaseRepository)
+        IStringLocalizer<SharedResources> localizer)
     {
-        _propertyHandler = propertyHandler;
-        _leaseHandler = leaseHandler;
-        _propertyRepository = propertyRepository;
+        _createLeaseHandler = createLeaseHandler;
         _leaseRepository = leaseRepository;
+        _propertyRepository = propertyRepository;
+        _localizer = localizer;
     }
-
-    [HttpGet("properties")]
-    public async Task<IActionResult> GetProperties() => Ok(await _propertyRepository.GetAllAsync());
-
-    [HttpGet("leases")]
-    public async Task<IActionResult> GetLeases() => Ok(await _leaseRepository.GetAllAsync());
 
     [HttpPost("properties")]
-    public async Task<IActionResult> CreateProperty([FromBody] CreatePropertyRequest request)
+    public async Task<IActionResult> CreateProperty([FromBody] RentGuard.Core.Business.Modules.Leases.Domain.Property property)
     {
-        var command = new CreatePropertyCommand(request.Title, request.Address, request.Rent, request.Currency, request.LandlordId);
-        await _propertyHandler.Handle(command, CancellationToken.None);
-        return Ok(new { Message = "Property created successfully" });
+        await _propertyRepository.AddAsync(property);
+        return Ok(new { Message = _localizer["PropertyCreated"].Value });
     }
 
-    [HttpPost("leases")]
-    public async Task<IActionResult> CreateLease([FromBody] CreateLeaseRequest request)
+    [HttpPost]
+    public async Task<IActionResult> CreateLease([FromBody] CreateLeaseCommand command)
     {
-        var command = new CreateLeaseCommand(request.PropertyId, request.TenantId, request.StartDate, request.DueDayOfMonth);
-        await _leaseHandler.Handle(command, CancellationToken.None);
-        return Ok(new { Message = "Lease created successfully" });
+        await _createLeaseHandler.Handle(command, HttpContext.RequestAborted);
+        return Ok(new { Message = _localizer["LeaseCreated"].Value });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var leases = await _leaseRepository.GetAllAsync();
+        return Ok(leases);
     }
 }
