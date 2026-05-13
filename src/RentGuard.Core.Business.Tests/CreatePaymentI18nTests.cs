@@ -1,39 +1,38 @@
 using Moq;
 using Microsoft.Extensions.Localization;
-using RentGuard.Core.Business.Modules.Payments.Domain;
+using RentGuard.Core.Business.Modules.Payments.CreatePayment;
 using RentGuard.Core.Business.Modules.Payments.Domain.Repositories;
 using RentGuard.Core.Business.Modules.Leases.Domain.Repositories;
-using RentGuard.Core.Business.Modules.Payments.CreatePayment;
 using RentGuard.Core.Business;
 using Xunit;
 using FluentAssertions;
 
 namespace RentGuard.Core.Business.Tests;
 
-public class CreatePaymentHandlerTests
+public class CreatePaymentI18nTests
 {
     private readonly Mock<IPaymentRepository> _paymentRepoMock;
     private readonly Mock<ILeaseRepository> _leaseRepoMock;
     private readonly Mock<IStringLocalizer<SharedResources>> _localizerMock;
     private readonly CreatePaymentHandler _handler;
 
-    public CreatePaymentHandlerTests()
+    public CreatePaymentI18nTests()
     {
         _paymentRepoMock = new Mock<IPaymentRepository>();
         _leaseRepoMock = new Mock<ILeaseRepository>();
         _localizerMock = new Mock<IStringLocalizer<SharedResources>>();
         _handler = new CreatePaymentHandler(_paymentRepoMock.Object, _leaseRepoMock.Object, _localizerMock.Object);
-        
-        _localizerMock.Setup(x => x["LeaseNotFound"]).Returns(new LocalizedString("LeaseNotFound", "Lease not found."));
     }
 
     [Fact]
-    public async Task Handle_Should_Throw_Exception_When_Lease_Does_Not_Exist()
+    public async Task Handle_Should_Use_Localized_Message_When_Lease_Not_Found()
     {
         var leaseId = Guid.NewGuid();
         _leaseRepoMock.Setup(x => x.GetByIdAsync(leaseId)).ReturnsAsync((RentGuard.Core.Business.Modules.Leases.Domain.Lease)null);
-        var command = new CreatePaymentCommand(leaseId, 1000, DateTime.UtcNow, "REF-ERROR");
+        var localizedString = new LocalizedString("LeaseNotFound", "Contrato no encontrado");
+        _localizerMock.Setup(x => x["LeaseNotFound"]).Returns(localizedString);
+        var command = new CreatePaymentCommand(leaseId, 1000, DateTime.UtcNow, "REF");
         Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Lease not found.");
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Contrato no encontrado");
     }
 }

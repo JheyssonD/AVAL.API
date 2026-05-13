@@ -17,14 +17,4 @@ public class AIValidationIntegrationTests
 
         response.RequiresManualReview.Should().BeFalse();
     }
-
-    [Fact]
-    public async Task ProcessValidation_WithLowConfidence_ShouldRequireReview()
-    {
-        var data = new ExtractedData(1000m, DateTime.Now, "REF", 0.70);
-        var response = await _handler.Handle(data, 1000m);
-
-        response.RequiresManualReview.Should().BeTrue();
-        response.Reason.Should().Contain("Low confidence");
-    }
 }

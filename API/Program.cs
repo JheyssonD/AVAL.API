@@ -1,32 +1,35 @@
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
 using RentGuard.Presentation.API.Infrastructure.Persistence;
 
-public class Program
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+builder.Services.AddControllers();
+builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddCors(options =>
 {
-    public static async Task Main(string[] args)
+    options.AddPolicy("AllowAll", policy =>
     {
-        var builder = WebApplication.CreateBuilder(args);
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
+});
 
-        // Inyeccin de Infraestructura
-        builder.Services.AddInfrastructure(builder.Configuration);
-        
-        builder.Services.AddControllers();
-        builder.Services.AddOpenApi();
+var app = builder.Build();
 
-        var app = builder.Build();
+var supportedCultures = new[] { "en-US", "es-ES", "en", "es" };
+var localizationOptions = new RequestLocalizationOptions()
+    .SetDefaultCulture(supportedCultures[0])
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
 
-        // Inicializacin de DB Blindada
-        await DbInitializer.Initialize(app.Configuration);
+app.UseRequestLocalization(localizationOptions);
 
-        if (app.Environment.IsDevelopment())
-        {
-            app.MapOpenApi();
-        }
+app.UseCors("AllowAll");
+app.UseAuthorization();
+app.MapControllers();
 
-        app.UseHttpsRedirection();
-        app.UseAuthorization();
-        
-        app.MapControllers();
+await DbInitializer.Initialize(app.Configuration);
 
-        await app.RunAsync();
-    }
-}
+app.Run();
