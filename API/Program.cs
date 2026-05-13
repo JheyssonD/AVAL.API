@@ -1,4 +1,3 @@
-using FastEndpoints;
 using RentGuard.Presentation.API.Infrastructure.Persistence;
 
 public class Program
@@ -7,14 +6,15 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        // Inyeccin de Infraestructura
         builder.Services.AddInfrastructure(builder.Configuration);
         
-        builder.Services.AddControllers(); // Asegurar soporte de controladores
-        builder.Services.AddFastEndpoints();
+        builder.Services.AddControllers();
         builder.Services.AddOpenApi();
 
         var app = builder.Build();
 
+        // Inicializacin de DB Blindada
         await DbInitializer.Initialize(app.Configuration);
 
         if (app.Environment.IsDevelopment())
@@ -25,11 +25,7 @@ public class Program
         app.UseHttpsRedirection();
         app.UseAuthorization();
         
-        // Endpoints de prueba directos
-        app.MapGet("/health", () => "API is alive");
-        
         app.MapControllers();
-        app.UseFastEndpoints();
 
         await app.RunAsync();
     }

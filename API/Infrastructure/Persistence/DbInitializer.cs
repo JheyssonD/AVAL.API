@@ -8,23 +8,15 @@ public static class DbInitializer
     public static async Task Initialize(IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection")!;
-        
-        // 1. Conectar a 'master' para asegurar que la DB existe
-        var masterConnectionString = connectionString.Replace("Database=RentGuardDb", "Database=master")
-                                                   .Replace("Initial Catalog=RentGuardDb", "Initial Catalog=master");
+        var masterConnectionString = connectionString.Replace("Database=RentGuardDb", "Database=master");
         
         using (var masterConnection = new SqlConnection(masterConnectionString))
         {
-            await masterConnection.ExecuteAsync(@"
-                IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'RentGuardDb')
-                CREATE DATABASE RentGuardDb;
-            ");
+            await masterConnection.ExecuteAsync("IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'RentGuardDb') CREATE DATABASE RentGuardDb;");
         }
 
-        // Dar un pequeo respiro al SQL Server
-        await Task.Delay(2000);
+        await Task.Delay(1000);
 
-        // 2. Ahora s, conectar a 'RentGuardDb' e inicializar tablas
         using (var connection = new SqlConnection(connectionString))
         {
             const string sql = @"
@@ -49,6 +41,28 @@ public static class DbInitializer
                     DueDayOfMonth INT NOT NULL,
                     IsActive BIT NOT NULL,
                     CONSTRAINT FK_Leases_Properties FOREIGN KEY (PropertyId) REFERENCES Properties(Id)
+                );
+
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Payments' AND xtype='U')
+                CREATE TABLE Payments (
+                    Id UNIQUEIDENTIFIER PRIMARY KEY,
+                    LeaseId UNIQUEIDENTIFIER NOT NULL,
+                    Amount DECIMAL(18,2) NOT NULL,
+                    PaymentDate DATETIME2 NOT NULL,
+                    Reference NVARCHAR(100) NULL,
+                    Status INT NOT NULL,
+                    CreatedAt DATETIME2 NOT NULL,
+                    CONSTRAINT FK_Payments_Leases FOREIGN KEY (LeaseId) REFERENCES Leases(Id)
+                );
+
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='TrustScoreHistory' AND xtype='U')
+                CREATE TABLE TrustScoreHistory (
+                    Id UNIQUEIDENTIFIER PRIMARY KEY,
+                    TenantId NVARCHAR(100) NOT NULL,
+                    PreviousScore INT NOT NULL,
+                    NewScore INT NOT NULL,
+                    Reason NVARCHAR(500) NULL,
+                    CreatedAt DATETIME2 NOT NULL
                 );
             ";
             await connection.ExecuteAsync(sql);

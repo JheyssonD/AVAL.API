@@ -1,29 +1,12 @@
 using RentGuard.Core.Business.Modules.Leases.Domain;
 using RentGuard.Core.Business.Modules.Leases.Domain.Repositories;
-using System.Collections.Concurrent;
 
 namespace RentGuard.Presentation.API.Infrastructure.Persistence;
 
-public class InMemoryLeaseRepository : IPropertyRepository, ILeaseRepository
+public class InMemoryLeaseRepository : ILeaseRepository
 {
-    private readonly ConcurrentDictionary<Guid, Property> _properties = new();
-    private readonly ConcurrentBag<Lease> _leases = new();
-
-    public Task AddAsync(Property property)
-    {
-        _properties[property.Id] = property;
-        return Task.CompletedTask;
-    }
-
-    public Task AddAsync(Lease lease)
-    {
-        _leases.Add(lease);
-        return Task.CompletedTask;
-    }
-
-    public Task<Property?> GetByIdAsync(Guid id)
-    {
-        _properties.TryGetValue(id, out var property);
-        return Task.FromResult(property);
-    }
+    private readonly List<Lease> _leases = new();
+    public Task AddAsync(Lease lease) { _leases.Add(lease); return Task.CompletedTask; }
+    public Task<Lease?> GetByIdAsync(Guid id) => Task.FromResult(_leases.FirstOrDefault(x => x.Id == id));
+    public Task<IEnumerable<Lease>> GetAllAsync() => Task.FromResult(_leases.AsEnumerable());
 }
