@@ -1,3 +1,4 @@
-[submodule "src/AVAL.Core.Business"]
-	path = src/AVAL.Core.Business
+[submodule "src/RentGuard.Core.Business"]
+	path = src/RentGuard.Core.Business
 	url = https://github.com/JheyssonD/AVAL.Core.Business
+	ignore = dirty
