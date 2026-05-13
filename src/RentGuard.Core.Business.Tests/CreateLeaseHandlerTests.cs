@@ -22,17 +22,15 @@ public class CreateLeaseHandlerTests
         _propertyRepoMock = new Mock<IPropertyRepository>();
         _localizerMock = new Mock<IStringLocalizer<SharedResources>>();
         _handler = new CreateLeaseHandler(_leaseRepoMock.Object, _propertyRepoMock.Object, _localizerMock.Object);
-        
-        _localizerMock.Setup(x => x["PropertyNotFound"]).Returns(new LocalizedString("PropertyNotFound", "Property not found."));
     }
 
     [Fact]
-    public async Task Handle_Should_Throw_Exception_When_Property_Does_Not_Exist()
+    public async Task Handle_Should_Throw_DomainException_When_Property_Does_Not_Exist()
     {
         var propertyId = Guid.NewGuid();
         _propertyRepoMock.Setup(x => x.GetByIdAsync(propertyId)).ReturnsAsync((Property)null);
         var command = new CreateLeaseCommand(propertyId, "tenant-1", DateTime.UtcNow, 5);
         Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Property not found.");
+        await act.Should().ThrowAsync<DomainException>().Where(e => e.Error.Code == DomainErrors.Properties.NotFound.Code);
     }
 }

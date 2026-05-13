@@ -33,6 +33,6 @@ public class CreatePaymentI18nTests
         _localizerMock.Setup(x => x["LeaseNotFound"]).Returns(localizedString);
         var command = new CreatePaymentCommand(leaseId, 1000, DateTime.UtcNow, "REF");
         Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Contrato no encontrado");
+        await act.Should().ThrowAsync<DomainException>().WithMessage("Contrato no encontrado");
     }
 }

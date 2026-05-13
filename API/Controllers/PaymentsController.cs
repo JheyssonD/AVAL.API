@@ -39,13 +39,13 @@ public class PaymentsController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreatePaymentCommand command)
     {
         await _createPaymentHandler.Handle(command, HttpContext.RequestAborted);
-        return Ok(new { Message = _localizer["PaymentCreated"].Value });
+        return Ok(new { Message = _localizer[DomainErrors.Payments.Created.Code].Value });
     }
 
     [HttpPost("{id}/approve")]
     public async Task<IActionResult> Approve(Guid id)
     {
         await _approvePaymentHandler.Handle(new ApprovePaymentCommand(id), HttpContext.RequestAborted);
-        return Ok(new { Message = _localizer["PaymentApproved"].Value });
+        return Ok(new { Message = _localizer[DomainErrors.Payments.Approved.Code].Value });
     }
 }

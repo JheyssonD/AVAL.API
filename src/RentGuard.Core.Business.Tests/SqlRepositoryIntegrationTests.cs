@@ -36,7 +36,18 @@ public class SqlRepositoryIntegrationTests
     public async Task Should_Persist_And_Retrieve_Payment()
     {
         var repo = new SqlPaymentRepository(_connectionString);
-        var payment = Payment.Create(Guid.NewGuid(), 1500.50m, DateTime.UtcNow, "SQL-REF-OK");
+        
+        // Insertar dependencias para cumplir con FKs
+        var propertyId = Guid.NewGuid();
+        var leaseId = Guid.NewGuid();
+        
+        using (var conn = new SqlConnection(_connectionString))
+        {
+            await conn.ExecuteAsync("INSERT INTO Properties (Id, Title, Address, MonthlyRent, Currency, LandlordId, IsAvailable) VALUES (@Id, 'Test Prop', 'Addr', 1000, 'USD', 'L1', 1)", new { Id = propertyId });
+            await conn.ExecuteAsync("INSERT INTO Leases (Id, PropertyId, TenantId, StartDate, DueDayOfMonth, IsActive) VALUES (@Id, @PropId, 'T1', GETUTCDATE(), 5, 1)", new { Id = leaseId, PropId = propertyId });
+        }
+
+        var payment = Payment.Create(leaseId, 1500.50m, DateTime.UtcNow, "SQL-REF-OK");
 
         await repo.AddAsync(payment);
         var retrieved = await repo.GetByIdAsync(payment.Id);

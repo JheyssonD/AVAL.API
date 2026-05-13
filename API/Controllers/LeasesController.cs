@@ -31,14 +31,14 @@ public class LeasesController : ControllerBase
     public async Task<IActionResult> CreateProperty([FromBody] RentGuard.Core.Business.Modules.Leases.Domain.Property property)
     {
         await _propertyRepository.AddAsync(property);
-        return Ok(new { Message = _localizer["PropertyCreated"].Value });
+        return Ok(new { Message = _localizer[DomainErrors.Properties.Created.Code].Value });
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateLease([FromBody] CreateLeaseCommand command)
     {
         await _createLeaseHandler.Handle(command, HttpContext.RequestAborted);
-        return Ok(new { Message = _localizer["LeaseCreated"].Value });
+        return Ok(new { Message = _localizer[DomainErrors.Leases.Created.Code].Value });
     }
 
     [HttpGet]

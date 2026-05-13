@@ -23,17 +23,15 @@ public class CreatePaymentHandlerTests
         _leaseRepoMock = new Mock<ILeaseRepository>();
         _localizerMock = new Mock<IStringLocalizer<SharedResources>>();
         _handler = new CreatePaymentHandler(_paymentRepoMock.Object, _leaseRepoMock.Object, _localizerMock.Object);
-        
-        _localizerMock.Setup(x => x["LeaseNotFound"]).Returns(new LocalizedString("LeaseNotFound", "Lease not found."));
     }
 
     [Fact]
-    public async Task Handle_Should_Throw_Exception_When_Lease_Does_Not_Exist()
+    public async Task Handle_Should_Throw_DomainException_When_Lease_Does_Not_Exist()
     {
         var leaseId = Guid.NewGuid();
         _leaseRepoMock.Setup(x => x.GetByIdAsync(leaseId)).ReturnsAsync((RentGuard.Core.Business.Modules.Leases.Domain.Lease)null);
         var command = new CreatePaymentCommand(leaseId, 1000, DateTime.UtcNow, "REF-ERROR");
         Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Lease not found.");
+        await act.Should().ThrowAsync<DomainException>().Where(e => e.Error.Code == DomainErrors.Leases.NotFound.Code);
     }
 }
