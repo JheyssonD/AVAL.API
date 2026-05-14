@@ -19,6 +19,7 @@ public static class DependencyInjection
     {
         services.AddPersistence(configuration);
         services.AddCoreHandlers();
+        services.AddHostedService<RentGuard.Presentation.API.Infrastructure.BackgroundServices.OutboxProcessor>();
         return services;
     }
 
@@ -28,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<ILeaseRepository, SqlLeaseRepository>();
         services.AddScoped<IPaymentRepository, SqlPaymentRepository>();
         services.AddScoped<ITrustScoreRepository, SqlTrustScoreRepository>();
+        services.AddScoped<IOutboxRepository, SqlOutboxRepository>();
         return services;
     }
 
