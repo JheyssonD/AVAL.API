@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using RentGuard.Core.Business.Modules.Payments.CreatePayment;
 using RentGuard.Core.Business.Modules.Payments.ApprovePayment;
 using RentGuard.Core.Business.Modules.Payments.GetPayments;
@@ -19,6 +20,12 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<RentGuard.Core.Business.Shared.ITenantContext, RentGuard.Core.Business.Shared.TenantContext>();
+        
+        services.AddDbContext<RentGuardDbContext>((sp, options) => {
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
+            options.UseSqlServer(connectionString);
+        });
+
         services.AddPersistence(configuration);
         services.AddCoreHandlers();
         services.AddHostedService<RentGuard.Presentation.API.Infrastructure.BackgroundServices.OutboxProcessor>();
@@ -27,11 +34,11 @@ public static class DependencyInjection
 
     private static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddScoped<IPropertyRepository, SqlPropertyRepository>();
-        services.AddScoped<ILeaseRepository, SqlLeaseRepository>();
-        services.AddScoped<IPaymentRepository, SqlPaymentRepository>();
-        services.AddScoped<ITrustScoreRepository, SqlTrustScoreRepository>();
-        services.AddScoped<IOutboxRepository, SqlOutboxRepository>();
+        services.AddScoped<IPropertyRepository, EfPropertyRepository>();
+        services.AddScoped<ILeaseRepository, EfLeaseRepository>();
+        services.AddScoped<IPaymentRepository, EfPaymentRepository>();
+        services.AddScoped<ITrustScoreRepository, EfTrustScoreRepository>();
+        services.AddScoped<IOutboxRepository, EfOutboxRepository>();
         return services;
     }
 
