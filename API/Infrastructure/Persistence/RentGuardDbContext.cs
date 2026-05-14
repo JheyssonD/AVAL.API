@@ -41,6 +41,9 @@ public class RentGuardDbContext : DbContext
         {
             builder.ToTable("Leases");
             builder.HasKey(x => x.Id);
+            builder.Property(x => x.MonthlyRent).HasPrecision(18, 2);
+            builder.Property(x => x.CreditBalance).HasPrecision(18, 2);
+            builder.Property(x => x.DebtBalance).HasPrecision(18, 2);
             builder.Property(x => x.RowVersion).IsRowVersion();
             builder.HasQueryFilter(x => x.TenantId == _tenantContext.TenantId);
         });
@@ -51,6 +54,9 @@ public class RentGuardDbContext : DbContext
             builder.ToTable("Payments");
             builder.HasKey(x => x.Id);
             builder.Property(x => x.Amount).HasPrecision(18, 2);
+            builder.Property(x => x.OCRConfidence).HasPrecision(5, 4);
+            builder.Property(x => x.ExternalMessageId).HasMaxLength(255);
+            builder.Property(x => x.ImageHash).HasMaxLength(128);
             builder.Property(x => x.RowVersion).IsRowVersion();
             builder.HasQueryFilter(x => x.TenantId == _tenantContext.TenantId);
         });
