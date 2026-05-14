@@ -32,9 +32,12 @@ public class EfRepositoryIntegrationTests : IDisposable
             .AddJsonFile("appsettings.json")
             .Build();
 
-        var baseConnStr = config.GetConnectionString("TestConnection");
+        var baseConnStr = config["ConnectionStrings:TestConnection"];
+        if (string.IsNullOrEmpty(baseConnStr)) 
+            throw new Exception("Connection string 'TestConnection' not found in appsettings.json");
+
         var dbName = $"RentGuardDb_Test_{Guid.NewGuid():N}";
-        var connectionString = baseConnStr!.Replace("RentGuardDb_Test", dbName);
+        var connectionString = baseConnStr.Replace("RentGuardDb_Test", dbName);
 
         var options = new DbContextOptionsBuilder<RentGuardDbContext>()
             .UseSqlServer(connectionString)
