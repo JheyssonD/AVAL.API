@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System.IO;
 using Moq;
 using RentGuard.Core.Business.Modules.Payments.Domain;
 using RentGuard.Core.Business.Shared;
@@ -8,22 +10,38 @@ using FluentAssertions;
 
 namespace RentGuard.Core.Business.Tests;
 
-public class EfRepositoryIntegrationTests
+public class EfRepositoryIntegrationTests : IDisposable
 {
     private readonly RentGuardDbContext _context;
     private readonly Mock<ITenantContext> _tenantContextMock;
     private readonly Guid _tenantId = Guid.NewGuid();
+
+    public void Dispose()
+    {
+        _context.Database.EnsureDeleted();
+        _context.Dispose();
+    }
 
     public EfRepositoryIntegrationTests()
     {
         _tenantContextMock = new Mock<ITenantContext>();
         _tenantContextMock.Setup(t => t.TenantId).Returns(_tenantId);
 
+        var config = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json")
+            .Build();
+
+        var baseConnStr = config.GetConnectionString("TestConnection");
+        var dbName = $"RentGuardDb_Test_{Guid.NewGuid():N}";
+        var connectionString = baseConnStr!.Replace("RentGuardDb_Test", dbName);
+
         var options = new DbContextOptionsBuilder<RentGuardDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseSqlServer(connectionString)
             .Options;
 
         _context = new RentGuardDbContext(options, _tenantContextMock.Object);
+        _context.Database.EnsureCreated();
     }
 
     [Fact]
@@ -75,6 +93,38 @@ public class EfRepositoryIntegrationTests
         // Assert
         results.Should().HaveCount(1);
         results.First().Reference.Should().Be("P1");
+    }
+
+    [Fact]
+    public async Task Update_Should_Throw_ConcurrencyException_On_Conflict()
+    {
+        // Arrange
+        var repo = new EfPaymentRepository(_context);
+        var leaseId = Guid.NewGuid();
+        var payment = Payment.Create(leaseId, 100, DateTime.UtcNow, "P1");
+        typeof(Payment).GetProperty("TenantId")!.SetValue(payment, _tenantId);
+        
+        await repo.AddAsync(payment);
+        _context.ChangeTracker.Clear();
+
+        // Obtener dos instancias del mismo pago
+        var p1 = await repo.GetByIdAsync(payment.Id);
+        var p2 = await _context.Payments.AsNoTracking().FirstAsync(p => p.Id == payment.Id);
+
+        // Modificar p1 y guardar
+        p1!.Approve();
+        await repo.UpdateAsync(p1);
+
+        // Intentar modificar p2 (que tiene el RowVersion viejo)
+        p2.Reject();
+        
+        // Assert
+        Func<Task> act = async () => {
+            _context.Payments.Update(p2);
+            await _context.SaveChangesAsync();
+        };
+
+        await act.Should().ThrowAsync<DbUpdateConcurrencyException>();
     }
 }
 
