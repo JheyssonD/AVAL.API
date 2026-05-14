@@ -12,10 +12,12 @@ public class OutboxTests
     {
         var content = "{ \"PaymentId\": \"guid\" }";
         var type = "PaymentApprovedEvent";
+        var tenantId = Guid.NewGuid();
         
-        var message = new OutboxMessage(type, content);
+        var message = new OutboxMessage(tenantId, type, content);
 
         message.Id.Should().NotBeEmpty();
+        message.TenantId.Should().Be(tenantId);
         message.Type.Should().Be(type);
         message.Content.Should().Be(content);
         message.OccurredOnUtc.Should().BeBefore(DateTime.UtcNow.AddSeconds(1));
@@ -25,7 +27,7 @@ public class OutboxTests
     [Fact]
     public void MarkAsProcessed_ShouldUpdateTimestamp()
     {
-        var message = new OutboxMessage("Test", "{}");
+        var message = new OutboxMessage(Guid.NewGuid(), "Test", "{}");
         
         message.MarkAsProcessed();
 
@@ -36,7 +38,7 @@ public class OutboxTests
     [Fact]
     public void SetError_ShouldStoreErrorMessage()
     {
-        var message = new OutboxMessage("Test", "{}");
+        var message = new OutboxMessage(Guid.NewGuid(), "Test", "{}");
         var error = "Connection failed";
         
         message.SetError(error);

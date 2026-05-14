@@ -1,5 +1,6 @@
 using System.Text.Json;
 using RentGuard.Core.Business.Shared.Outbox;
+using RentGuard.Core.Business.Modules.Payments.Domain.Events;
 
 namespace RentGuard.Presentation.API.Infrastructure.BackgroundServices;
 
@@ -42,15 +43,23 @@ public class OutboxProcessor : BackgroundService
 
         foreach (var message in messages)
         {
-            _logger.LogInformation("Processing message {MessageId} of type {MessageType}", message.Id, message.Type);
+            _logger.LogInformation("Processing message {MessageId} of type {MessageType} for Tenant {TenantId}", message.Id, message.Type, message.TenantId);
 
             try
             {
+                var tenantContext = scope.ServiceProvider.GetRequiredService<RentGuard.Core.Business.Shared.ITenantContext>();
+                tenantContext.SetTenantId(message.TenantId);
+
                 // In a real scenario, use MediatR or a dynamic dispatcher.
                 // For MVP, we handle known events.
                 if (message.Type == "PaymentApprovedEvent")
                 {
-                    // Logic to update Trust Score or notify
+                    var @event = JsonSerializer.Deserialize<PaymentApprovedEvent>(message.Content);
+                    if (@event != null)
+                    {
+                        var handler = scope.ServiceProvider.GetRequiredService<RentGuard.Core.Business.Modules.TrustScore.Handlers.PaymentApprovedEventHandler>();
+                        await handler.Handle(@event, ct);
+                    }
                 }
 
                 message.MarkAsProcessed();

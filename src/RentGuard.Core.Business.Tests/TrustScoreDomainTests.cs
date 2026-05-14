@@ -10,16 +10,16 @@ public class TrustScoreDomainTests
     public void Should_Update_Score_And_Create_History_Record()
     {
         // Arrange
-        var tenantId = "tenant-777";
+        var residentId = "tenant-777";
         var currentScore = 80;
         
         // Act
-        var history = TrustScoreHistory.Create(tenantId, currentScore, currentScore + 5, "Payment Approved");
+        var history = TrustScoreHistory.Create(residentId, currentScore, currentScore + 5, "Payment Approved");
 
         // Assert
         history.NewScore.Should().Be(85);
         history.Reason.Should().Be("Payment Approved");
-        history.TenantId.Should().Be(tenantId);
+        history.ResidentId.Should().Be(residentId);
     }
 
     [Theory]

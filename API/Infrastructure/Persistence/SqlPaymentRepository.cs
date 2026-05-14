@@ -1,5 +1,6 @@
 using Dapper;
 using Microsoft.Data.SqlClient;
+using RentGuard.Core.Business.Shared;
 using RentGuard.Core.Business.Modules.Payments.Domain;
 using RentGuard.Core.Business.Modules.Payments.Domain.Repositories;
 

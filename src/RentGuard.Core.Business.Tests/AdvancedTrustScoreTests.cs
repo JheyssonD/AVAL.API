@@ -22,8 +22,8 @@ public class AdvancedTrustScoreTests
         // Usuario baja de 1000 a 600 en un mes
         var snapshots = new List<TrustScoreSnapshot>
         {
-            new("tenant-1", DateTime.Now.AddMonths(-1), 1000),
-            new("tenant-1", DateTime.Now, 600)
+            TrustScoreSnapshot.Create("tenant-1", 1000, DateTime.Now.AddMonths(-1)),
+            TrustScoreSnapshot.Create("tenant-1", 600, DateTime.Now)
         };
 
         var insight = TrajectoryCalculator.Calculate(snapshots, "tenant-1");
@@ -40,7 +40,7 @@ public class AdvancedTrustScoreTests
         var snapshots = new List<TrustScoreSnapshot>();
         for (int i = 0; i <= 6; i++)
         {
-            snapshots.Add(new("tenant-1", DateTime.Now.AddMonths(-6 + i), i * 100));
+            snapshots.Add(TrustScoreSnapshot.Create("tenant-1", i * 100, DateTime.Now.AddMonths(-6 + i)));
         }
 
         var insight = TrajectoryCalculator.Calculate(snapshots, "tenant-1");
@@ -56,11 +56,11 @@ public class AdvancedTrustScoreTests
         // Caída drástica -> Volatilidad activa
         var snapshots = new List<TrustScoreSnapshot>
         {
-            new("tenant-1", DateTime.Now.AddMonths(-4), 1000),
-            new("tenant-1", DateTime.Now.AddMonths(-3), 600), // VolatilityFlag = true
-            new("tenant-1", DateTime.Now.AddMonths(-2), 610), // Month 1 recovery
-            new("tenant-1", DateTime.Now.AddMonths(-1), 620), // Month 2 recovery
-            new("tenant-1", DateTime.Now, 630)               // Month 3 recovery
+            TrustScoreSnapshot.Create("tenant-1", 1000, DateTime.Now.AddMonths(-4)),
+            TrustScoreSnapshot.Create("tenant-1", 600, DateTime.Now.AddMonths(-3)), // VolatilityFlag = true
+            TrustScoreSnapshot.Create("tenant-1", 610, DateTime.Now.AddMonths(-2)), // Month 1 recovery
+            TrustScoreSnapshot.Create("tenant-1", 620, DateTime.Now.AddMonths(-1)), // Month 2 recovery
+            TrustScoreSnapshot.Create("tenant-1", 630, DateTime.Now)               // Month 3 recovery
         };
 
         // En este punto, después de 3 meses de tendencia no negativa, el flag debería desactivarse

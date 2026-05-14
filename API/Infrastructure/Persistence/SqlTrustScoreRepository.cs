@@ -1,5 +1,6 @@
 using Dapper;
 using Microsoft.Data.SqlClient;
+using RentGuard.Core.Business.Shared;
 using RentGuard.Core.Business.Modules.TrustScore.Domain;
 using RentGuard.Core.Business.Modules.TrustScore.Domain.Repositories;
 
@@ -45,6 +46,23 @@ public class SqlTrustScoreRepository : ITrustScoreRepository
             history.NewScore,
             history.Reason,
             history.CreatedAt
+        });
+    }
+
+    public async Task AddSnapshotAsync(TrustScoreSnapshot snapshot)
+    {
+        using var connection = new SqlConnection(_connectionString);
+        const string sql = @"
+            INSERT INTO TrustScoreSnapshots (Id, TenantId, UserId, ScoreDate, ScoreValue, Status)
+            VALUES (@Id, @TenantId, @UserId, @ScoreDate, @ScoreValue, @Status)";
+        
+        await connection.ExecuteAsync(sql, new {
+            snapshot.Id,
+            TenantId = _tenantContext.TenantId,
+            snapshot.UserId,
+            snapshot.ScoreDate,
+            snapshot.ScoreValue,
+            snapshot.Status
         });
     }
 

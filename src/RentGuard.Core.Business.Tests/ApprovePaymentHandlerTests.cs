@@ -4,9 +4,10 @@ using RentGuard.Core.Business.Modules.Payments.Domain;
 using RentGuard.Core.Business.Modules.Payments.Domain.Repositories;
 using RentGuard.Core.Business.Modules.Leases.Domain;
 using RentGuard.Core.Business.Modules.Leases.Domain.Repositories;
-using RentGuard.Core.Business.Modules.TrustScore.Domain;
 using RentGuard.Core.Business.Modules.TrustScore.Domain.Repositories;
 using RentGuard.Core.Business.Modules.Payments.ApprovePayment;
+using RentGuard.Core.Business.Shared;
+using RentGuard.Core.Business.Shared.Outbox;
 using RentGuard.Core.Business;
 using Xunit;
 using FluentAssertions;
@@ -17,7 +18,8 @@ public class ApprovePaymentHandlerTests
 {
     private readonly Mock<IPaymentRepository> _paymentRepoMock;
     private readonly Mock<ILeaseRepository> _leaseRepoMock;
-    private readonly Mock<ITrustScoreRepository> _trustScoreRepoMock;
+    private readonly Mock<IOutboxRepository> _outboxRepoMock;
+    private readonly Mock<ITenantContext> _tenantContextMock;
     private readonly Mock<IStringLocalizer<SharedResources>> _localizerMock;
     private readonly ApprovePaymentHandler _handler;
 
@@ -25,26 +27,37 @@ public class ApprovePaymentHandlerTests
     {
         _paymentRepoMock = new Mock<IPaymentRepository>();
         _leaseRepoMock = new Mock<ILeaseRepository>();
-        _trustScoreRepoMock = new Mock<ITrustScoreRepository>();
+        _outboxRepoMock = new Mock<IOutboxRepository>();
+        _tenantContextMock = new Mock<ITenantContext>();
         _localizerMock = new Mock<IStringLocalizer<SharedResources>>();
-        _handler = new ApprovePaymentHandler(_paymentRepoMock.Object, _leaseRepoMock.Object, _trustScoreRepoMock.Object, _localizerMock.Object);
-        
-        _localizerMock.Setup(x => x["PaymentNotFound"]).Returns(new LocalizedString("PaymentNotFound", "Payment not found."));
-        _localizerMock.Setup(x => x["LeaseNotFound"]).Returns(new LocalizedString("LeaseNotFound", "Lease not found."));
+        _handler = new ApprovePaymentHandler(
+            _paymentRepoMock.Object, 
+            _leaseRepoMock.Object, 
+            _outboxRepoMock.Object, 
+            _tenantContextMock.Object, 
+            _localizerMock.Object);
     }
 
     [Fact]
-    public async Task Handle_Should_Approve_Payment_Update_Score_And_Add_History()
+    public async Task Handle_Should_Approve_Payment_And_Publish_Outbox_Message()
     {
+        // Arrange
         var leaseId = Guid.NewGuid();
-        var tenantId = "tenant-123";
+        var residentId = "tenant-123";
         var payment = Payment.Create(leaseId, 1000, DateTime.UtcNow, "REF");
-        var lease = Lease.Create(leaseId, tenantId, DateTime.UtcNow, 5);
+        var lease = Lease.Create(leaseId, residentId, DateTime.UtcNow, 5);
+        
         _paymentRepoMock.Setup(x => x.GetByIdAsync(payment.Id)).ReturnsAsync(payment);
         _leaseRepoMock.Setup(x => x.GetByIdAsync(leaseId)).ReturnsAsync(lease);
-        _trustScoreRepoMock.Setup(x => x.GetCurrentScoreAsync(tenantId)).ReturnsAsync(80);
+        _tenantContextMock.Setup(x => x.TenantId).Returns(Guid.NewGuid());
+
+        // Act
         await _handler.Handle(new ApprovePaymentCommand(payment.Id), CancellationToken.None);
+
+        // Assert
         payment.Status.Should().Be(PaymentStatus.Approved);
-        _trustScoreRepoMock.Verify(x => x.UpdateScoreAsync(tenantId, 85), Times.Once);
+        _outboxRepoMock.Verify(x => x.SaveAsync(It.IsAny<OutboxMessage>()), Times.Once);
+        _paymentRepoMock.Verify(x => x.UpdateAsync(payment), Times.Once);
     }
 }
+

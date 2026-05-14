@@ -9,6 +9,7 @@ using RentGuard.Core.Business.Modules.Leases.CreateLease;
 using RentGuard.Core.Business.Modules.Leases.Domain.Repositories;
 using RentGuard.Core.Business.Modules.Payments.Domain.Repositories;
 using RentGuard.Core.Business.Modules.TrustScore.Domain.Repositories;
+using RentGuard.Core.Business.Shared.Outbox;
 using RentGuard.Presentation.API.Infrastructure.Persistence;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -44,6 +45,7 @@ public static class DependencyInjection
         services.AddScoped<SubmitReviewHandler>();
         services.AddScoped<CreatePropertyHandler>();
         services.AddScoped<CreateLeaseHandler>();
+        services.AddScoped<RentGuard.Core.Business.Modules.TrustScore.Handlers.PaymentApprovedEventHandler>();
         return services;
     }
 }

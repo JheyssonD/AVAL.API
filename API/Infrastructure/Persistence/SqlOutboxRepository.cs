@@ -17,8 +17,8 @@ public class SqlOutboxRepository : IOutboxRepository
     {
         using var connection = new SqlConnection(_connectionString);
         const string sql = @"
-            INSERT INTO OutboxMessages (Id, Type, Content, OccurredOnUtc, ProcessedOnUtc, Error)
-            VALUES (@Id, @Type, @Content, @OccurredOnUtc, @ProcessedOnUtc, @Error)";
+            INSERT INTO OutboxMessages (Id, TenantId, Type, Content, OccurredOnUtc, ProcessedOnUtc, Error)
+            VALUES (@Id, @TenantId, @Type, @Content, @OccurredOnUtc, @ProcessedOnUtc, @Error)";
         await connection.ExecuteAsync(sql, message);
     }
 
@@ -26,7 +26,7 @@ public class SqlOutboxRepository : IOutboxRepository
     {
         using var connection = new SqlConnection(_connectionString);
         const string sql = @"
-            SELECT TOP (@BatchSize) Id, Type, Content, OccurredOnUtc, ProcessedOnUtc, Error
+            SELECT TOP (@BatchSize) Id, TenantId, Type, Content, OccurredOnUtc, ProcessedOnUtc, Error
             FROM OutboxMessages
             WHERE ProcessedOnUtc IS NULL
             ORDER BY OccurredOnUtc ASC";
