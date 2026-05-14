@@ -17,6 +17,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<RentGuard.Core.Business.Shared.ITenantContext, RentGuard.Core.Business.Shared.TenantContext>();
         services.AddPersistence(configuration);
         services.AddCoreHandlers();
         services.AddHostedService<RentGuard.Presentation.API.Infrastructure.BackgroundServices.OutboxProcessor>();

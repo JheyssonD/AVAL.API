@@ -26,6 +26,8 @@ var localizationOptions = new RequestLocalizationOptions()
 
 app.UseRequestLocalization(localizationOptions);
 
+app.UseMiddleware<RentGuard.Presentation.API.Infrastructure.Security.TenantMiddleware>();
+
 app.UseCors("AllowAll");
 app.UseAuthorization();
 app.MapControllers();

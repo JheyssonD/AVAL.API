@@ -8,30 +8,52 @@ namespace RentGuard.Presentation.API.Infrastructure.Persistence;
 public class SqlPaymentRepository : IPaymentRepository
 {
     private readonly string _connectionString;
-    public SqlPaymentRepository(IConfiguration configuration) => _connectionString = configuration.GetConnectionString("DefaultConnection")!;
-    public SqlPaymentRepository(string connectionString) => _connectionString = connectionString;
+    private readonly ITenantContext _tenantContext;
+
+    public SqlPaymentRepository(IConfiguration configuration, ITenantContext tenantContext)
+    {
+        _connectionString = configuration.GetConnectionString("DefaultConnection")!;
+        _tenantContext = tenantContext;
+    }
 
     public async Task AddAsync(Payment payment)
     {
         using var connection = new SqlConnection(_connectionString);
-        await connection.ExecuteAsync("INSERT INTO Payments (Id, LeaseId, Amount, PaymentDate, Reference, Status, CreatedAt) VALUES (@Id, @LeaseId, @Amount, @PaymentDate, @Reference, @Status, @CreatedAt)", payment);
+        const string sql = @"
+            INSERT INTO Payments (Id, TenantId, LeaseId, Amount, PaymentDate, Reference, Status, CreatedAt) 
+            VALUES (@Id, @SoftwareTenantId, @LeaseId, @Amount, @PaymentDate, @Reference, @Status, @CreatedAt)";
+        
+        await connection.ExecuteAsync(sql, new { 
+            payment.Id,
+            SoftwareTenantId = _tenantContext.TenantId,
+            payment.LeaseId,
+            payment.Amount,
+            payment.PaymentDate,
+            payment.Reference,
+            payment.Status,
+            payment.CreatedAt
+        });
     }
 
     public async Task<Payment?> GetByIdAsync(Guid id)
     {
         using var connection = new SqlConnection(_connectionString);
-        return await connection.QueryFirstOrDefaultAsync<Payment>("SELECT * FROM Payments WHERE Id = @Id", new { Id = id });
+        const string sql = "SELECT * FROM Payments WHERE Id = @Id AND TenantId = @TenantId";
+        return await connection.QueryFirstOrDefaultAsync<Payment>(sql, new { Id = id, TenantId = _tenantContext.TenantId });
     }
 
     public async Task UpdateAsync(Payment payment)
     {
         using var connection = new SqlConnection(_connectionString);
-        await connection.ExecuteAsync("UPDATE Payments SET Status = @Status WHERE Id = @Id", payment);
+        const string sql = "UPDATE Payments SET Status = @Status WHERE Id = @Id AND TenantId = @TenantId";
+        await connection.ExecuteAsync(sql, new { payment.Status, payment.Id, TenantId = _tenantContext.TenantId });
     }
 
     public async Task<IEnumerable<Payment>> GetAllAsync()
     {
         using var connection = new SqlConnection(_connectionString);
-        return await connection.QueryAsync<Payment>("SELECT * FROM Payments ORDER BY CreatedAt DESC");
+        const string sql = "SELECT * FROM Payments WHERE TenantId = @TenantId ORDER BY CreatedAt DESC";
+        return await connection.QueryAsync<Payment>(sql, new { TenantId = _tenantContext.TenantId });
     }
 }
+
