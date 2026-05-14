@@ -84,6 +84,15 @@ public static class DbInitializer
                     AdjustedTrustLevel INT NOT NULL,
                     LastUpdated DATETIME2 NOT NULL
                 );
+
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Tenants' AND xtype='U')
+                CREATE TABLE Tenants (
+                    Id UNIQUEIDENTIFIER PRIMARY KEY,
+                    Name NVARCHAR(200) NOT NULL,
+                    TrustEngineType NVARCHAR(50) NOT NULL DEFAULT 'Legacy',
+                    HistoricalWindow INT NOT NULL DEFAULT 6,
+                    CreatedAt DATETIME2 NOT NULL
+                );
             ";
             await connection.ExecuteAsync(sql);
         }
