@@ -64,6 +64,26 @@ public static class DbInitializer
                     Reason NVARCHAR(500) NULL,
                     CreatedAt DATETIME2 NOT NULL
                 );
+
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='TrustScoreSnapshots' AND xtype='U')
+                CREATE TABLE TrustScoreSnapshots (
+                    Id UNIQUEIDENTIFIER PRIMARY KEY,
+                    UserId NVARCHAR(100) NOT NULL,
+                    ScoreDate DATETIME2 NOT NULL,
+                    ScoreValue INT NOT NULL,
+                    Status INT NOT NULL
+                );
+
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='TrustInsights' AND xtype='U')
+                CREATE TABLE TrustInsights (
+                    UserId NVARCHAR(100) PRIMARY KEY,
+                    CurrentScore INT NOT NULL,
+                    TrendVector FLOAT NOT NULL,
+                    MaturityLevel INT NOT NULL,
+                    VolatilityFlag BIT NOT NULL,
+                    AdjustedTrustLevel INT NOT NULL,
+                    LastUpdated DATETIME2 NOT NULL
+                );
             ";
             await connection.ExecuteAsync(sql);
         }
