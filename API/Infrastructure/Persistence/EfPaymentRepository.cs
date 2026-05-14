@@ -24,6 +24,12 @@ public class EfPaymentRepository : IPaymentRepository
         return await _context.Payments.FindAsync(id);
     }
 
+    public async Task<Payment?> GetByExternalIdAsync(string externalId)
+    {
+        return await _context.Payments
+            .FirstOrDefaultAsync(p => p.ExternalMessageId == externalId);
+    }
+
     public async Task UpdateAsync(Payment payment)
     {
         _context.Payments.Update(payment);
