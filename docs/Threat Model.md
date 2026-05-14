@@ -1,0 +1,53 @@
+# 📘 Threat Model — RentGuard AI
+
+Este documento identifica los vectores de ataque potenciales contra RentGuard AI y define las contramedidas necesarias para mitigar riesgos de seguridad. Se utiliza la metodología enfocada en la superficie de ataque de WhatsApp, API y Almacenamiento.
+
+---
+
+## 1. Vectores de Ataque y Mitigación
+
+### 1.1 Spoofing (Suplantación de Identidad)
+- **Amenaza**: Un atacante suplanta el número de WhatsApp de un inquilino legítimo para reportar pagos falsos o consultar datos sensibles.
+- **Mitigación**: 
+    - Validación de `WhatsApp Business Account (WABA) Signature` en cada webhook entrante.
+    - Registro obligatorio de números autorizados vinculado a contratos activos (`ITenantContext`).
+    - **Fase Futura**: Implementación de MFA/OTP vía WhatsApp para transacciones críticas.
+
+### 1.2 Replay Attacks (Ataques de Re-entrada)
+- **Amenaza**: Un atacante intercepta un mensaje de pago válido y lo reenvía múltiples veces para intentar duplicar saldo o saturar el sistema.
+- **Mitigación**: 
+    - **Idempotencia**: Cada mensaje de Meta incluye un `MessageId` único. El sistema rechaza cualquier `MessageId` ya procesado.
+    - **Image Hashing**: Se genera un SHA-256 de cada comprobante. Imágenes idénticas son rechazadas automáticamente como duplicados (`Duplicate`).
+
+### 1.3 Blob Leaks (Fuga de Imágenes)
+- **Amenaza**: Acceso no autorizado a los comprobantes de pago almacenados en el Blob Storage.
+- **Mitigación**: 
+    - **Private Containers**: El almacenamiento de imágenes es privado y no tiene acceso público.
+    - **SAS Tokens**: El acceso a las imágenes desde el SPA se realiza mediante tokens de firma compartida (SAS) de corta duración (ej. 5 min).
+    - **Encryption at Rest**: Cifrado automático de Azure Storage (AES-256).
+
+### 1.4 DoS / Resource Exhaustion (Denegación de Servicio)
+- **Amenaza**: Envío masivo de imágenes pesadas o solicitudes a la API para agotar la memoria, el disco o el presupuesto de IA.
+- **Mitigación**: 
+    - **Rate Limiting**: Límites por IP y por número de teléfono en la puerta de enlace (API Gateway).
+    - **Max Payload Size**: Rechazo inmediato de cualquier imagen > 10MB.
+    - **Validation Pipeline Isolation**: El procesamiento de IA se realiza de forma asíncrona mediante el Outbox para no bloquear la recepción de mensajes.
+
+### 1.5 Privilege Escalation (Escalación de Privilegios)
+- **Amenaza**: Un Landlord intenta acceder a datos de otro Landlord o un inquilino intenta acceder a funciones administrativas.
+- **Mitigación**: 
+    - **Global Query Filters**: Aislamiento forzado a nivel de base de datos mediante `TenantId`.
+    - **Role-Based Access Control (RBAC)**: Validación estricta de claims JWT en cada endpoint.
+    - **Zero Trust**: El sistema no confía en el ID enviado en el body; siempre utiliza el `TenantId` extraído del contexto de seguridad autenticado.
+
+---
+
+## 2. Matriz de Riesgos
+
+| Amenaza | Probabilidad | Impacto | Mitigación |
+| :--- | :--- | :--- | :--- |
+| **Acceso a datos de otro Tenant** | Baja | Crítico | Global Query Filters + RBAC |
+| **Fraude con imagen editada** | Media | Alto | Vision AI + Revisión Manual |
+| **Ataque de fuerza bruta (Auth)** | Media | Medio | Rate Limiting + Account Lockout |
+| **Inyección SQL** | Muy Baja | Crítico | Uso exclusivo de EF Core y Parámetros |
+| **Fuga de Logs sensibles** | Baja | Medio | Enmascaramiento de PII en Serilog |
