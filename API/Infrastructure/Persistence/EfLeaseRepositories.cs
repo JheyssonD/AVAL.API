@@ -50,6 +50,20 @@ public class EfLeaseRepository : ILeaseRepository
         return await _context.Leases.FindAsync(id);
     }
 
+    public async Task<Lease?> GetByIdForUpdateAsync(Guid id)
+    {
+        // Native SQL for UPDLOCK to guarantee atomic settlement
+        return await _context.Leases
+            .FromSqlRaw("SELECT * FROM Leases WITH (UPDLOCK, READPAST) WHERE Id = {0}", id)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task UpdateAsync(Lease lease)
+    {
+        _context.Leases.Update(lease);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task<IEnumerable<Lease>> GetAllAsync()
     {
         return await _context.Leases.ToListAsync();

@@ -28,7 +28,7 @@ public class PaymentIntegrationTests
     {
         var leaseId = Guid.NewGuid();
         // Usar la Factory Create en lugar de constructor vaco
-        var lease = Lease.Create(Guid.NewGuid(), "tenant-1", DateTime.UtcNow, 5);
+        var lease = Lease.Create(Guid.NewGuid(), "tenant-1", DateTime.UtcNow, 5, 1000m);
         _leaseRepoMock.Setup(x => x.GetByIdAsync(leaseId)).ReturnsAsync(lease);
         
         var command = new CreatePaymentCommand(leaseId, 1500.50m, DateTime.UtcNow, "RENT-MAY-2026");

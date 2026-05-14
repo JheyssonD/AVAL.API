@@ -10,7 +10,7 @@ public class LeaseDomainTests
     [Fact]
     public void Create_Lease_With_Invalid_DueDay_Should_Throw_DomainException()
     {
-        Action act = () => Lease.Create(Guid.NewGuid(), "tenant-1", DateTime.UtcNow, 32);
+        Action act = () => Lease.Create(Guid.NewGuid(), "tenant-1", DateTime.UtcNow, 32, 1000m);
         act.Should().Throw<DomainException>().Where(e => e.Error.Code == DomainErrors.Leases.DueDayInvalid.Code);
     }
 }

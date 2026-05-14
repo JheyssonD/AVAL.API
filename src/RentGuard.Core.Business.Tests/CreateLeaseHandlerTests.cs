@@ -29,7 +29,7 @@ public class CreateLeaseHandlerTests
     {
         var propertyId = Guid.NewGuid();
         _propertyRepoMock.Setup(x => x.GetByIdAsync(propertyId)).ReturnsAsync((Property)null);
-        var command = new CreateLeaseCommand(propertyId, "tenant-1", DateTime.UtcNow, 5);
+        var command = new CreateLeaseCommand(propertyId, "tenant-1", DateTime.UtcNow, 5, 1000m);
         Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
         await act.Should().ThrowAsync<DomainException>().Where(e => e.Error.Code == DomainErrors.Properties.NotFound.Code);
     }
