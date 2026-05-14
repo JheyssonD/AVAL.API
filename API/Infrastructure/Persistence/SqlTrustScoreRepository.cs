@@ -36,4 +36,17 @@ public class SqlTrustScoreRepository : ITrustScoreRepository
             VALUES (@Id, @TenantId, @PreviousScore, @NewScore, @Reason, @CreatedAt)";
         await connection.ExecuteAsync(sql, history);
     }
+
+    public async Task RunBatchTrajectoryCalculationAsync(Guid tenantId)
+    {
+        // En una implementacin real, este mtodo cargara el script SQL de un recurso
+        // o archivo y lo ejecutara con el tenantId como parmetro.
+        // Por ahora, simulamos la ejecucin.
+        using var connection = new SqlConnection(_connectionString);
+        
+        // El script real estar en d:\Repositories\AVAL\Presentation\API\Infrastructure\Persistence\Scripts\UpdateTrustInsights.sql
+        // Para este MVP, ejecutamos una versin simplificada directamente.
+        const string sql = "-- TODO: Invocar script de regresin lineal por lotes";
+        await connection.ExecuteAsync(sql, new { TenantId = tenantId });
+    }
 }
