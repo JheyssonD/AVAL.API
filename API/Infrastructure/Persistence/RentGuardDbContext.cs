@@ -31,8 +31,9 @@ public class RentGuardDbContext : DbContext
         {
             builder.ToTable("Properties");
             builder.HasKey(x => x.Id);
+            builder.Property(x => x.MonthlyRent).HasPrecision(18, 2);
             builder.Property(x => x.RowVersion).IsRowVersion();
-            builder.HasQueryFilter(x => x.TenantId == _tenantContext.TenantId); // Global Filter for Multitenancy
+            builder.HasQueryFilter(x => x.TenantId == _tenantContext.TenantId);
         });
 
         // Lease Configuration
@@ -49,6 +50,7 @@ public class RentGuardDbContext : DbContext
         {
             builder.ToTable("Payments");
             builder.HasKey(x => x.Id);
+            builder.Property(x => x.Amount).HasPrecision(18, 2);
             builder.Property(x => x.RowVersion).IsRowVersion();
             builder.HasQueryFilter(x => x.TenantId == _tenantContext.TenantId);
         });
