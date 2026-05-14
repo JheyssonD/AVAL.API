@@ -45,10 +45,11 @@ public class ApprovePaymentHandlerTests
         var leaseId = Guid.NewGuid();
         var residentId = "tenant-123";
         var payment = Payment.Create(leaseId, 1000, DateTime.UtcNow, "REF");
+        payment.Process(); // FSM: Must be in processing to approve
         var lease = Lease.Create(Guid.NewGuid(), "resident-123", DateTime.UtcNow, 5, 1000m);
         
         _paymentRepoMock.Setup(x => x.GetByIdAsync(payment.Id)).ReturnsAsync(payment);
-        _leaseRepoMock.Setup(x => x.GetByIdAsync(leaseId)).ReturnsAsync(lease);
+        _leaseRepoMock.Setup(x => x.GetByIdForUpdateAsync(leaseId)).ReturnsAsync(lease);
         _tenantContextMock.Setup(x => x.TenantId).Returns(Guid.NewGuid());
 
         // Act

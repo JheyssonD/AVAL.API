@@ -17,6 +17,9 @@ public class InMemoryLeaseRepository : ILeaseRepository
 
     public Task<Lease?> GetByIdForUpdateAsync(Guid id) => GetByIdAsync(id); // In-memory doesn't need real UPDLOCK for unit tests
 
+    public Task<Lease?> GetByResidentIdAsync(string residentId) => 
+        Task.FromResult(_leases.FirstOrDefault(x => x.ResidentId == residentId && x.IsActive));
+
     public Task UpdateAsync(Lease lease)
     {
         var existing = _leases.FirstOrDefault(x => x.Id == lease.Id);

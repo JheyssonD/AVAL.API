@@ -58,6 +58,12 @@ public class EfLeaseRepository : ILeaseRepository
             .FirstOrDefaultAsync();
     }
 
+    public async Task<Lease?> GetByResidentIdAsync(string residentId)
+    {
+        return await _context.Leases
+            .FirstOrDefaultAsync(l => l.ResidentId == residentId && l.IsActive);
+    }
+
     public async Task UpdateAsync(Lease lease)
     {
         _context.Leases.Update(lease);

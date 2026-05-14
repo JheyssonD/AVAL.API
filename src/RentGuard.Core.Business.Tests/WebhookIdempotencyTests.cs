@@ -1,6 +1,7 @@
 using Moq;
 using RentGuard.Core.Business.Modules.Payments.CreatePayment;
 using RentGuard.Core.Business.Modules.Payments.Domain.Repositories;
+using RentGuard.Core.Business.Modules.Leases.Domain;
 using RentGuard.Core.Business.Modules.Leases.Domain.Repositories;
 using Microsoft.Extensions.Localization;
 using RentGuard.Core.Business.Modules.Payments.Domain;
@@ -62,7 +63,7 @@ public class WebhookIdempotencyTests
 
         _leaseRepositoryMock
             .Setup(r => r.GetByIdAsync(leaseId))
-            .ReturnsAsync(new Mock<RentGuard.Core.Business.Modules.Leases.Domain.Lease>().Object);
+            .ReturnsAsync(Lease.Create(Guid.NewGuid(), "tenant-1", DateTime.UtcNow, 5, 1000m));
 
         var command = new CreatePaymentCommand(leaseId, 100, DateTime.UtcNow, "REF2", messageId);
 
