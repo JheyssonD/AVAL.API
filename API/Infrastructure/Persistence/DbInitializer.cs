@@ -85,13 +85,18 @@ public static class DbInitializer
                     LastUpdated DATETIME2 NOT NULL
                 );
 
-                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Tenants' AND xtype='U')
-                CREATE TABLE Tenants (
-                    Id UNIQUEIDENTIFIER PRIMARY KEY,
-                    Name NVARCHAR(200) NOT NULL,
-                    TrustEngineType NVARCHAR(50) NOT NULL DEFAULT 'Legacy',
                     HistoricalWindow INT NOT NULL DEFAULT 6,
                     CreatedAt DATETIME2 NOT NULL
+                );
+
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='OutboxMessages' AND xtype='U')
+                CREATE TABLE OutboxMessages (
+                    Id UNIQUEIDENTIFIER PRIMARY KEY,
+                    Type NVARCHAR(200) NOT NULL,
+                    Content NVARCHAR(MAX) NOT NULL,
+                    OccurredOnUtc DATETIME2 NOT NULL,
+                    ProcessedOnUtc DATETIME2 NULL,
+                    Error NVARCHAR(MAX) NULL
                 );
             ";
             await connection.ExecuteAsync(sql);
